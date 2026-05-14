@@ -14,5 +14,5 @@ public class ProductoResponseDTO {
     private String nombre;
     private Integer precioUnitario;
     private String fabricante;
-    private String categoriaNombre;
+    private String categoria;
 }

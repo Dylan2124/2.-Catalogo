@@ -49,9 +49,9 @@ public class ProductoService {
 
     public ProductoResponseDTO guardar(ProductoRequestDTO dto){
         Especificaciones especificaciones = especificacionesRepository
-                .findById(dto.getCategoriaId())
-                .orElseThrow() -> new RuntimeException(
-                        ""
+                .findById(dto.get)
+                .orElseThrow() -> new RuntimeException("La categoria con ID: " + dto.ge
+
         )
     }
 
