@@ -13,6 +13,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     List<Producto> findByNombreContainingIgnoreCase(String nombre);
 
+    List<Producto> findByidProducto(Long idProducto);
+
     // filtrar marcas de hardware (Nvidia, ASUS, etc)
     List<Producto> findByFabricanteIgnoreCase(String fabricante);
 

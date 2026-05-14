@@ -8,7 +8,5 @@ import java.util.List;
 
 @Repository
 public interface EspecificacionesRepository extends JpaRepository<Especificaciones, Long> {
-    List<Especificaciones> findByProductoIdProducto(Long idProducto);
 
-    List<Especificaciones> findByAtributoIgnoreCase(String atributo);
 }
