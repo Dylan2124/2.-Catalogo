@@ -1,5 +1,6 @@
 package com.Catalogo2._Catalogo.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -18,11 +19,14 @@ public class ProductoRequestDTO {
     private String categoria;
 
     @NotNull(message = "El precio del producto debe ser mayor a 0.")
-    @NotBlank(message = "El Id de la categoria es obligatorio")
+    @Min(value = 1,message = "El precio del producto debe ser mayor a 0")
     private Integer precioUnitario;
 
     @NotBlank(message = "El fabricante es obligatorio.")
     private String fabricante;
+
+    @NotNull(message = "El ID del la especificion es obligatoria")
+    private  Long especificacionId;
 
 
 

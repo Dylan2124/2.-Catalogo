@@ -14,12 +14,7 @@ public class Especificaciones {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_especificacion")
     private Long idEspecificacion;
-
-    @ManyToOne
-    @JoinColumn(name = "id_Producto",nullable = false)
-    private Producto producto;
 
     @Column(nullable = false,length = 100)
     private String atributo;

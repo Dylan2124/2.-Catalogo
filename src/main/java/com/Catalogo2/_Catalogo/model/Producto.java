@@ -14,7 +14,6 @@ public class Producto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_producto")
     private Long idProducto;
 
     @Column(nullable = false,length = 100)
@@ -28,6 +27,10 @@ public class Producto {
 
     @Column(nullable = false,length = 100)
     private String fabricante;
+
+    @ManyToOne
+    @JoinColumn(name = "especificacione_id", nullable = false)
+    private Especificaciones especificaciones;
 
 
 }
