@@ -43,7 +43,7 @@ public class ProductoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long idProducto){
         if(productoService.obtenerPorId(idProducto).isEmpty()){
             return ResponseEntity.notFound().build();
@@ -59,7 +59,27 @@ public class ProductoController {
     }
 
     @GetMapping("/fabricante")
-    public ResponseEntity
+    public ResponseEntity<List<ProductoResponseDTO>> buscarFabricante(@RequestParam String fabricante){
+        List<ProductoResponseDTO> fabricanteBuscado = productoService.buscarPorFabricante(fabricante);
+        return ResponseEntity.ok(fabricanteBuscado);
+    }
+
+    @GetMapping("/categoria")
+    public ResponseEntity<List<ProductoResponseDTO>> buscarCategori(@RequestParam String categori){
+        List<ProductoResponseDTO> categoriaBuscado = productoService.buscarPorCategoria(categori);
+        return ResponseEntity.ok(categoriaBuscado);
+    }
+
+    @GetMapping("/precio")
+    public ResponseEntity<List<ProductoResponseDTO>> BuscarHardwareEconomico(@RequestParam Integer precio){
+        List<ProductoResponseDTO> productos = productoService.HardwareEconomico(precio);
+        return ResponseEntity.ok(productos);
+    }
+
+    @GetMapping("/sugerencia")
+    public ResponseEntity<List<ProductoResponseDTO>> buscarSugerencia(){
+        return ResponseEntity.ok(productoService.buscarSugerenciaAleatorio());
+    }
 
 
 }
