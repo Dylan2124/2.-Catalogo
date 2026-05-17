@@ -22,9 +22,23 @@ public class GlobalException {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntime(RuntimeException ex){
+        ex.printStackTrace();
         Map<String ,String> errores = new HashMap<>();
-        errores.put("Error", ex.getMessage());
+        String mensaje = ex.getMessage();
+        if (mensaje == null) {
+            mensaje = "Error interno: " + ex.getClass().getSimpleName();
+        }
+        errores.put("Error", mensaje);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errores);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        Map<String, String> respuesta = new HashMap<>();
+        respuesta.put("Error", ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(respuesta);
+    }
 }
+
+

@@ -2,7 +2,7 @@ package com.Catalogo2._Catalogo.service;
 
 import com.Catalogo2._Catalogo.dto.ProductoRequestDTO;
 import com.Catalogo2._Catalogo.dto.ProductoResponseDTO;
-import com.Catalogo2._Catalogo.model.Especificaciones;
+import com.Catalogo2._Catalogo.model.Especificacion;
 import com.Catalogo2._Catalogo.model.Producto;
 import com.Catalogo2._Catalogo.repository.EspecificacionesRepository;
 import com.Catalogo2._Catalogo.repository.ProductoRepository;
@@ -10,7 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.sound.sampled.Port;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,39 +50,43 @@ public class ProductoService {
     }
 
     public ProductoResponseDTO guardar(ProductoRequestDTO dto){
-        log.info("Iniciando registro de nuevo producto: {}");
-        Especificaciones especificaciones = especificacionesRepository
+        Especificacion especificacion = especificacionesRepository
                 .findById(dto.getEspecificacionId())
-                .orElseThrow(() -> new RuntimeException(
-                        "Las especificaciones con ID: " + dto.getEspecificacionId()+ " no fue encontrado "));
-
+                .orElseThrow(() -> {
+                    log.error("Error al registrar: Especificaciones con ID {} no existe",dto.getEspecificacionId());
+                    return new IllegalArgumentException("Las especificaciones con ID: "+dto.getEspecificacionId()+ "no fue encontrado");
+                        });
         Producto producto = new Producto(
                 null,
                 dto.getNombre(),
                 dto.getCategoria(),
                 dto.getPrecioUnitario(),
                 dto.getFabricante(),
-                especificaciones
+                Collections.singletonList(especificacion)
 
         );
-        return mapToDTO(productoRepository.save(producto));
-
+        Producto guardado = productoRepository.save(producto);
+        return mapToDTO(guardado);
     }
 
     public Optional<ProductoResponseDTO> actualizar(Long id, ProductoRequestDTO dto){
         return productoRepository.findById(id).map(existe ->{
-            Especificaciones especificaciones = especificacionesRepository
+            Especificacion especificacion = especificacionesRepository
                     .findById(dto.getEspecificacionId())
-                    .orElseThrow(() -> new RuntimeException(
-                            "Especificaciones no encontra" + dto.getEspecificacionId()));
+                    .orElseThrow(() -> {
+                        log.error("Error al actualizar: Especificación con ID {} no existe", dto.getEspecificacionId());
+                        return new IllegalArgumentException("Especificación no encontrada: " + dto.getEspecificacionId());
+                    });
 
             existe.setNombre(dto.getNombre());
             existe.setCategoria(dto.getCategoria());
             existe.setPrecioUnitario(dto.getPrecioUnitario());
             existe.setFabricante(dto.getFabricante());
+            especificacion.setProducto(existe);
+            existe.setEspecificaciones(new ArrayList<>(List.of(especificacion)));
             return mapToDTO(productoRepository.save(existe));
         });
-    }
+        }
 
     public void eliminar(Long id){
         productoRepository.deleteById(id);
@@ -104,9 +109,10 @@ public class ProductoService {
                 .stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    public List<ProductoResponseDTO> HardwareEconomico(Integer precio){
-        return productoRepository.findHardwareEconomico(precio)
-                .stream().map(this::mapToDTO).collect(Collectors.toList());
+    public Optional<ProductoResponseDTO> obtenerProductoMasBarato() {
+        return productoRepository.findFirstByOrderByPrecioUnitarioAsc()
+                .map(this::mapToDTO);
+
     }
 
     public List<ProductoResponseDTO> buscarSugerenciaAleatorio(){
@@ -116,8 +122,4 @@ public class ProductoService {
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
-
-
-
-
 }

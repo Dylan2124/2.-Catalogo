@@ -1,9 +1,9 @@
 package com.Catalogo2._Catalogo.service;
 
-import com.Catalogo2._Catalogo.model.Especificaciones;
-import com.Catalogo2._Catalogo.model.Producto;
+import com.Catalogo2._Catalogo.model.Especificacion;
 import com.Catalogo2._Catalogo.repository.EspecificacionesRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,15 +15,17 @@ public class EspecificacionesService {
 
     private final EspecificacionesRepository especificacionesRepository;
 
-    public List<Especificaciones> obtenerTodo(){
+    public List<Especificacion> obtenerTodo(){
+
         return especificacionesRepository.findAll();
     }
 
-    public Optional<Especificaciones> obtenerPorID(Long id){
+    public Optional<Especificacion> obtenerPorID(Long id){
+
         return especificacionesRepository.findById(id);
     }
 
-    public Especificaciones especificacionesService(Especificaciones especificaciones){
+    public Especificacion especificacionesService(Especificacion especificaciones){
         return especificacionesRepository.save(especificaciones);
     }
 

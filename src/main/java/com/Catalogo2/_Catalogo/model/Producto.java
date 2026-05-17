@@ -5,7 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Table(name = "producto")
+import java.util.List;
+
+@Table(name = "producto", schema = "catalogo_db")
 @Entity
 @Data
 @AllArgsConstructor
@@ -14,6 +16,7 @@ public class Producto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_producto")
     private Long idProducto;
 
     @Column(nullable = false,length = 100)
@@ -28,9 +31,8 @@ public class Producto {
     @Column(nullable = false,length = 100)
     private String fabricante;
 
-    @ManyToOne
-    @JoinColumn(name = "especificacione_id", nullable = false)
-    private Especificaciones especificaciones;
+    @OneToMany(mappedBy = "producto",cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Especificacion> especificaciones;
 
 
 }
