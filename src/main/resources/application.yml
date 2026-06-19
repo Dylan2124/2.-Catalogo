@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: ms-catalogo  # Nombre estandarizado para que el Gateway
+  datasource:
+    url: jdbc:mysql://localhost:3306/catalogo_db
+    username: root
+    password: ""
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+server:
+  port: 8082
+
+# ========== CONFIGURACIÓN EUREKA ==========
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/  # URL del Servidor Eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    hostname: localhost
+    prefer-ip-address: false
+    health-check-url: http://localhost:8082/actuator/health # Cambiado al puerto 8082
+    status-page-url: http://localhost:8082/actuator/info    # Cambiado al puerto 8082
+
+# ========== ACTUATOR (Para Health Check) ==========
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# ========== LOGGING ==========
+logging:
+  level:
+    root: INFO
+    com.Catalogo2._Catalogo: DEBUG  # Actualizado al nombre de tu paquete de catálogo
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
