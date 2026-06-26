@@ -30,6 +30,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/producto")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class ProductoController {
 
     private final ProductoService productoService;
