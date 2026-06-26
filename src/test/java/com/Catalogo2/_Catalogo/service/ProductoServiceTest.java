@@ -37,20 +37,22 @@ class ProductoServiceTest {
     private Especificacion ejemploEspecificacion;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         ejemploEspecificacion = new Especificacion();
         ejemploEspecificacion.setIdEspecificacion(10L);
         ejemploEspecificacion.setAtributo("Switch: Red");
 
+        // CORRECCIÓN: Se cambió new Integer("40.000") por el valor primitivo directo 40000
         ejemploProducto = new Producto(
                 1L,
                 "Teclado Mecánico",
                 "Periféricos",
-                new Integer("40.000"),
+                40000,
                 "KeyBrand",
                 List.of(ejemploEspecificacion)
         );
-        // relacion bidireccional (si se usa en lógica)
+
+        // Relación bidireccional
         ejemploEspecificacion.setProducto(ejemploProducto);
     }
 
@@ -66,7 +68,6 @@ class ProductoServiceTest {
         // Assert
         assertTrue(resultado.isPresent(), "Se esperaba que el Optional estuviera presente");
         var dto = resultado.get();
-        // Verificar propiedades básicas mediante toString o reflexión mínima
         assertNotNull(dto);
         verify(productoRepository, times(1)).findById(1L);
     }
@@ -92,7 +93,8 @@ class ProductoServiceTest {
         ProductoRequestDTO request = new ProductoRequestDTO();
         request.setNombre("Teclado Mecánico");
         request.setCategoria("Periféricos");
-        request.setPrecioUnitario(new Integer("40.000"));
+        // CORRECCIÓN: Se cambió el formato con punto por el entero directo 40000
+        request.setPrecioUnitario(40000);
         request.setFabricante("KeyBrand");
         request.setEspecificacionId(10L);
 
@@ -121,4 +123,3 @@ class ProductoServiceTest {
         verify(especificacionesRepository, times(1)).findById(10L);
     }
 }
-

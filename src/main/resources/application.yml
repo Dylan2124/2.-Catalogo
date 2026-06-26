@@ -32,6 +32,20 @@ eureka:
     health-check-url: http://localhost:8082/actuator/health # Cambiado al puerto 8082
     status-page-url: http://localhost:8082/actuator/info    # Cambiado al puerto 8082
 
+# ========== SWAGGER ==========
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api/producto/v3/api-docs
+  swagger-ui: # 💡 CLAVE: Debe estar alineado exactamente con api-docs, no metido dentro
+    enabled: true
+    path: /api/producto/swagger-ui.html
+
+  servers:
+    - url: http://localhost:8080
+      description: Servidor a través del Gateway (Pruebas de Seguridad)
+    - url: http://localhost:8082
+      description: Servidor Local Directo (ms-catalogo)
 # ========== ACTUATOR (Para Health Check) ==========
 management:
   endpoints:

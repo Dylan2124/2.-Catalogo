@@ -20,7 +20,11 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.CollectionModel;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
 
 @Tag(name = "Productos", description = "Operaciones para gestionar productos y búsquedas")
 @RestController
@@ -30,20 +34,13 @@ public class ProductoController {
 
     private final ProductoService productoService;
 
-    @Operation(
-        summary = "Listar todos los productos",
-        description = "Devuelve la lista completa de productos con hipervínculos HATEOAS"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Lista devuelta correctamente",
-                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
-    })
+    @Operation(summary = "Listar todos los productos", description = "Devuelve la lista completa de productos con hipervínculos HATEOAS")
     @GetMapping
-    public ResponseEntity<CollectionModel<EntityModel<ProductoResponseDTO>>> obtenerTodo(){
+    public ResponseEntity<Map<String, Object>> obtenerTodo(){
         List<ProductoResponseDTO> productos = productoService.obtenerTodo();
         List<EntityModel<ProductoResponseDTO>> list = productos.stream()
                 .map(dto -> EntityModel.of(dto,
+                        linkTo(methodOn(ProductoController.class).obtenerPorId(dto.getIdProducto())).withSelfRel().withTitle("Ver este producto"),
                         linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("todos-productos")
                 ))
                 .toList();
@@ -51,212 +48,166 @@ public class ProductoController {
         CollectionModel<EntityModel<ProductoResponseDTO>> collection = CollectionModel.of(list,
                 linkTo(methodOn(ProductoController.class).obtenerTodo()).withSelfRel());
 
-        return ResponseEntity.ok(collection);
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("mensaje", "Catálogo completo de productos recuperado exitosamente.");
+        respuesta.put("total", productos.size());
+        respuesta.put("resultado", collection);
+
+        return ResponseEntity.ok(respuesta);
     }
 
-    @Operation(
-        summary = "Obtener un producto por ID",
-        description = "Devuelve un producto específico con enlaces HATEOAS"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Producto encontrado",
-                     content = @Content(mediaType = "application/json",
-                                        schema = @Schema(implementation = ProductoResponseDTO.class))),
-        @ApiResponse(responseCode = "404", description = "Producto no encontrado")
-    })
+    @Operation(summary = "Obtener un producto por ID", description = "Devuelve un producto específico con un mensaje de éxito")
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<ProductoResponseDTO>> obtenerPorId(
-            @Parameter(description = "ID del producto", example = "1")
-            @PathVariable Long id){
+    public ResponseEntity<Map<String, Object>> obtenerPorId(
+            @Parameter(description = "ID del producto", example = "1") @PathVariable Long id){
         return productoService.obtenerPorId(id)
-                .map(dto -> EntityModel.of(dto,
-                        linkTo(methodOn(ProductoController.class).obtenerPorId(id)).withSelfRel(),
-                        linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("productos")
-                ))
-                .map(ResponseEntity::ok)
+                .map(dto -> {
+                    EntityModel<ProductoResponseDTO> resource = EntityModel.of(dto,
+                            linkTo(methodOn(ProductoController.class).obtenerPorId(id)).withSelfRel(),
+                            linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("productos"),
+                            linkTo(methodOn(ProductoController.class).eliminar(id)).withRel("eliminar")
+                    );
+
+                    Map<String, Object> respuesta = new LinkedHashMap<>();
+                    respuesta.put("mensaje", "Producto con ID " + id + " encontrado correctamente.");
+                    respuesta.put("resultado", resource);
+                    return ResponseEntity.ok(respuesta);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(
-        summary = "Crear un nuevo producto",
-        description = "Crea y devuelve un nuevo producto con hipervínculo al recurso creado"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Producto creado exitosamente",
-                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos")
-    })
+    @Operation(summary = "Crear un nuevo producto", description = "Crea y devuelve un nuevo producto junto a un mensaje de confirmación")
     @PostMapping
-    public ResponseEntity<EntityModel<ProductoResponseDTO>> guardarProducto(@Valid @RequestBody ProductoRequestDTO dto){
+    public ResponseEntity<Map<String, Object>> guardarProducto(@Valid @RequestBody ProductoRequestDTO dto){
         ProductoResponseDTO nuevoProducto = productoService.guardar(dto);
         EntityModel<ProductoResponseDTO> resource = EntityModel.of(nuevoProducto,
                 linkTo(methodOn(ProductoController.class).obtenerPorId(nuevoProducto.getIdProducto())).withSelfRel(),
                 linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("productos")
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(resource);
+
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("mensaje", "El producto '" + nuevoProducto.getNombre() + "' ha sido creado exitosamente.");
+        respuesta.put("resultado", resource);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
     }
 
-    @Operation(
-        summary = "Actualizar un producto existente",
-        description = "Actualiza un producto específico y devuelve sus datos modificados"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Producto actualizado",
-                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
-        @ApiResponse(responseCode = "404", description = "Producto no encontrado")
-    })
+    @Operation(summary = "Actualizar un producto existente", description = "Actualiza un producto específico y devuelve un mensaje de confirmación")
     @PutMapping("/{id}")
-    public ResponseEntity<EntityModel<ProductoResponseDTO>> actualizar(
-            @Parameter(description = "ID del producto", example = "1")
-            @PathVariable Long id,
+    public ResponseEntity<Map<String, Object>> actualizar(
+            @Parameter(description = "ID del producto", example = "1") @PathVariable Long id,
             @Valid @RequestBody ProductoRequestDTO dto){
         return productoService.actualizar(id, dto)
-                .map(p -> EntityModel.of(p,
-                        linkTo(methodOn(ProductoController.class).obtenerPorId(id)).withSelfRel(),
-                        linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("productos")
-                ))
-                .map(ResponseEntity::ok)
+                .map(p -> {
+                    EntityModel<ProductoResponseDTO> resource = EntityModel.of(p,
+                            linkTo(methodOn(ProductoController.class).obtenerPorId(id)).withSelfRel(),
+                            linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("productos")
+                    );
+
+                    Map<String, Object> respuesta = new LinkedHashMap<>();
+                    respuesta.put("mensaje", "El producto con ID " + id + " se ha actualizado correctamente.");
+                    respuesta.put("resultado", resource);
+                    return ResponseEntity.ok(respuesta);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(
-        summary = "Eliminar un producto",
-        description = "Elimina un producto específico"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "204", description = "Producto eliminado exitosamente"),
-        @ApiResponse(responseCode = "404", description = "Producto no encontrado")
-    })
+    @Operation(summary = "Eliminar un producto", description = "Elimina un producto específico devolviendo confirmación en JSON")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(
-            @Parameter(description = "ID del producto", example = "1")
-            @PathVariable("id") Long idProducto){
+    public ResponseEntity<Map<String, String>> eliminar(
+            @Parameter(description = "ID del producto", example = "1") @PathVariable("id") Long idProducto){
         if(productoService.obtenerPorId(idProducto).isEmpty()){
             return ResponseEntity.notFound().build();
         }
+
         productoService.eliminar(idProducto);
-        return ResponseEntity.noContent().build();
+
+        Map<String, String> respuesta = new HashMap<>();
+        respuesta.put("mensaje", "El producto con ID " + idProducto + " ha sido eliminado correctamente.");
+
+        return ResponseEntity.ok(respuesta);
     }
 
     @Operation(
-        summary = "Buscar productos por nombre",
-        description = "Devuelve una lista de productos que coincidan con el nombre especificado"
+            summary = "Filtrar productos dinámicamente",
+            description = "Permite buscar productos aplicando un filtro opcional por nombre, fabricante o categoría."
     )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Búsqueda completada",
-                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "500", description = "Error en la búsqueda")
-    })
     @GetMapping("/buscar")
-    public ResponseEntity<CollectionModel<EntityModel<ProductoResponseDTO>>> buscarPorNombre(
-            @Parameter(description = "Nombre del producto a buscar", example = "Camiseta")
-            @RequestParam("nombre") String nombre){
-        List<ProductoResponseDTO> productos = productoService.buscarPorNombre(nombre);
-        List<EntityModel<ProductoResponseDTO>> list = productos.stream()
-                .map(dto -> EntityModel.of(dto,
-                        linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("todos-productos")
-                ))
-                .toList();
+    public ResponseEntity<Map<String, Object>> buscarProductos(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String fabricante,
+            @RequestParam(required = false) String categoria){
 
-        CollectionModel<EntityModel<ProductoResponseDTO>> collection = CollectionModel.of(list,
-                linkTo(methodOn(ProductoController.class).buscarPorNombre(nombre)).withSelfRel());
+        List<ProductoResponseDTO> productos;
+        String mensaje;
 
-        return ResponseEntity.ok(collection);
+        // Lógica condicional para ejecutar la búsqueda correcta según el parámetro enviado
+        if (nombre != null && !nombre.isBlank()) {
+            productos = productoService.buscarPorNombre(nombre);
+            mensaje = "Búsqueda por nombre '" + nombre + "' realizada con éxito.";
+        } else if (fabricante != null && !fabricante.isBlank()) {
+            productos = productoService.buscarPorFabricante(fabricante);
+            mensaje = "Productos del fabricante '" + fabricante + "' recuperados con éxito.";
+        } else if (categoria != null && !categoria.isBlank()) {
+            productos = productoService.buscarPorCategoria(categoria);
+            mensaje = "Productos en la categoría '" + categoria + "' recuperados con éxito.";
+        } else {
+            productos = productoService.obtenerTodo();
+            mensaje = "No se proporcionaron criterios específicos. Mostrando todo el catálogo.";
+        }
+
+        return procesarBusquedaColeccion(productos, mensaje,
+                linkTo(methodOn(ProductoController.class).buscarProductos(nombre, fabricante, categoria)).withSelfRel());
     }
 
-    @Operation(
-        summary = "Buscar productos por fabricante",
-        description = "Devuelve una lista de productos del fabricante especificado"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Búsqueda completada"),
-        @ApiResponse(responseCode = "500", description = "Error en la búsqueda")
-    })
-    @GetMapping("/fabricante")
-    public ResponseEntity<CollectionModel<EntityModel<ProductoResponseDTO>>> buscarFabricante(
-            @Parameter(description = "Nombre del fabricante", example = "Samsung")
-            @RequestParam String fabricante){
-        List<ProductoResponseDTO> productos = productoService.buscarPorFabricante(fabricante);
-        List<EntityModel<ProductoResponseDTO>> list = productos.stream()
-                .map(dto -> EntityModel.of(dto,
-                        linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("todos-productos")
-                ))
-                .toList();
-
-        CollectionModel<EntityModel<ProductoResponseDTO>> collection = CollectionModel.of(list,
-                linkTo(methodOn(ProductoController.class).buscarFabricante(fabricante)).withSelfRel());
-
-        return ResponseEntity.ok(collection);
-    }
-
-    @Operation(
-        summary = "Buscar productos por categoría",
-        description = "Devuelve una lista de productos de la categoría especificada"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Búsqueda completada"),
-        @ApiResponse(responseCode = "500", description = "Error en la búsqueda")
-    })
-    @GetMapping("/categoria")
-    public ResponseEntity<CollectionModel<EntityModel<ProductoResponseDTO>>> buscarCategoria(
-            @Parameter(description = "Nombre de la categoría", example = "Electrónica")
-            @RequestParam String categoria){
-        List<ProductoResponseDTO> productos = productoService.buscarPorCategoria(categoria);
-        List<EntityModel<ProductoResponseDTO>> list = productos.stream()
-                .map(dto -> EntityModel.of(dto,
-                        linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("todos-productos")
-                ))
-                .toList();
-
-        CollectionModel<EntityModel<ProductoResponseDTO>> collection = CollectionModel.of(list,
-                linkTo(methodOn(ProductoController.class).buscarCategoria(categoria)).withSelfRel());
-
-        return ResponseEntity.ok(collection);
-    }
-
-    @Operation(
-        summary = "Obtener el producto más barato",
-        description = "Devuelve el producto con el precio más bajo disponible"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Producto encontrado"),
-        @ApiResponse(responseCode = "404", description = "No hay productos disponibles")
-    })
+    @Operation(summary = "Obtener el producto más barato", description = "Devuelve el producto con el precio más bajo disponible")
     @GetMapping("/barato")
-    public ResponseEntity<EntityModel<ProductoResponseDTO>> buscarEconomico(){
+    public ResponseEntity<Map<String, Object>> buscarEconomico(){
         return productoService.obtenerProductoMasBarato()
-                .map(dto -> EntityModel.of(dto,
-                        linkTo(methodOn(ProductoController.class).buscarEconomico()).withSelfRel(),
-                        linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("productos")
-                ))
-                .map(ResponseEntity::ok)
+                .map(dto -> {
+                    EntityModel<ProductoResponseDTO> resource = EntityModel.of(dto,
+                            linkTo(methodOn(ProductoController.class).buscarEconomico()).withSelfRel(),
+                            linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("productos")
+                    );
+
+                    Map<String, Object> respuesta = new LinkedHashMap<>();
+                    respuesta.put("mensaje", "Se localizó el producto con el precio más bajo en el inventario.");
+                    respuesta.put("resultado", resource);
+                    return ResponseEntity.ok(respuesta);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(
-        summary = "Obtener sugerencia aleatoria",
-        description = "Devuelve una lista aleatoria de productos como sugerencia"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Sugerencias devueltas")
-    })
+    @Operation(summary = "Obtener sugerencia aleatoria", description = "Devuelve una lista aleatoria de productos como sugerencia")
     @GetMapping("/sugerencia")
-    public ResponseEntity<CollectionModel<EntityModel<ProductoResponseDTO>>> buscarSugerencia(){
+    public ResponseEntity<Map<String, Object>> buscarSugerencia(){
         List<ProductoResponseDTO> productos = productoService.buscarSugerenciaAleatorio();
+        return procesarBusquedaColeccion(productos, "Lista de sugerencias aleatorias generada correctamente.",
+                linkTo(methodOn(ProductoController.class).buscarSugerencia()).withSelfRel());
+    }
+
+    /**
+     * Método auxiliar privado reutilizado para unificar las respuestas de colecciones HATEOAS.
+     */
+    private ResponseEntity<Map<String, Object>> procesarBusquedaColeccion(
+            List<ProductoResponseDTO> productos, String mensaje, org.springframework.hateoas.Link selfLink) {
+
         List<EntityModel<ProductoResponseDTO>> list = productos.stream()
                 .map(dto -> EntityModel.of(dto,
+                        linkTo(methodOn(ProductoController.class).obtenerPorId(dto.getIdProducto())).withSelfRel(),
                         linkTo(methodOn(ProductoController.class).obtenerTodo()).withRel("todos-productos")
                 ))
                 .toList();
 
-        CollectionModel<EntityModel<ProductoResponseDTO>> collection = CollectionModel.of(list,
-                linkTo(methodOn(ProductoController.class).buscarSugerencia()).withSelfRel());
+        CollectionModel<EntityModel<ProductoResponseDTO>> collection = CollectionModel.of(list, selfLink);
 
-        return ResponseEntity.ok(collection);
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("mensaje", mensaje);
+        respuesta.put("coincidencias", productos.size());
+        respuesta.put("resultado", collection);
+
+        return ResponseEntity.ok(respuesta);
     }
-
-
-
-
 }
+
+
