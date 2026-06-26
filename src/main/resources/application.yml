@@ -37,7 +37,7 @@ springdoc:
   api-docs:
     enabled: true
     path: /api/producto/v3/api-docs
-  swagger-ui: # 💡 CLAVE: Debe estar alineado exactamente con api-docs, no metido dentro
+  swagger-ui:
     enabled: true
     path: /api/producto/swagger-ui.html
 
